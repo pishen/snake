@@ -8,7 +8,6 @@ object Main extends App {
   terminal.setCursorVisible(false)
   val tg = terminal.newTextGraphics()
 
-  // draw the edges
   tg.drawRectangle(
     new TerminalPosition(0, 0),
     new TerminalSize(50, 30),
@@ -17,39 +16,47 @@ object Main extends App {
   tg.drawLine(20, 15, 25, 15, '\u2588')
   terminal.flush()
 
-  def update(snake: Seq[(Int, Int)]): Int = {
+  case class Point(x: Int, y: Int) {
+    def up = Point(x, y - 1)
+    def right = Point(x + 1, y)
+    def down = Point(x, y + 1)
+    def left = Point(x - 1, y)
+  }
+
+  def update(snake: Seq[Point]): Int = {
     Thread.sleep(300)
     val command = Option(terminal.pollInput()).map(_.getKeyType)
     val next = command match {
       case Some(KeyType.ArrowUp) =>
-        (snake.head._1, snake.head._2 - 1)
+        snake.head.up
       case Some(KeyType.ArrowRight) =>
-        (snake.head._1 + 1, snake.head._2)
+        snake.head.right
       case Some(KeyType.ArrowDown) =>
-        (snake.head._1, snake.head._2 + 1)
+        snake.head.down
       case Some(KeyType.ArrowLeft) =>
-        (snake.head._1 - 1, snake.head._2)
+        snake.head.left
       case _ =>
-        if (snake.head._1 == snake(1)._1 + 1) {
-          (snake.head._1 + 1, snake.head._2)
-        } else if (snake.head._2 == snake(1)._2 + 1) {
-          (snake.head._1, snake.head._2 + 1)
-        } else if (snake.head._1 == snake(1)._1 - 1) {
-          (snake.head._1 - 1, snake.head._2)
+        if (snake.head.y == snake(1).y - 1) {
+          snake.head.up
+        } else if (snake.head.x == snake(1).x + 1) {
+          snake.head.right
+        } else if (snake.head.y == snake(1).y + 1) {
+          snake.head.down
         } else {
-          (snake.head._1, snake.head._2 - 1)
+          snake.head.left
         }
     }
 
-    if (next._1 > 0 && next._1 < 49 && next._2 > 0 && next._2 < 29) {
-      tg.setCharacter(next._1, next._2, '\u2588')
-      tg.setCharacter(snake.last._1, snake.last._2, ' ')
+    if (next.x > 0 && next.x < 49 && next.y > 0 && next.y < 29 && !snake.contains(next)) {
+      tg.setCharacter(next.x, next.y, '\u2588')
+      tg.setCharacter(snake.last.x, snake.last.y, ' ')
       update(next +: snake.init)
     } else {
       0
     }
   }
-  update((20 to 25).map(_ -> 15).reverse)
+  update((20 to 25).map(x => Point(x, 15)).reverse)
+
   terminal.readInput()
   terminal.exitPrivateMode()
 }
